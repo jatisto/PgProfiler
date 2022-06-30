@@ -1,0 +1,38 @@
+{
+  "executable": "PgProfiler",
+  "splashscreen": {
+    "imageFile": ""
+  },
+  "name": "PgProfiler",
+  "author": "Eugene Abdyushev",
+  "singleInstance": false,
+  "environment": "Production",
+  "build": {
+    "appId": "com.PgProfiler.app",
+    "productName": "PgProfiler",
+    "copyright": "Copyright © 2022 Eugene Abdyushev Contacts: <eugeneabdushev@gmail.com>. License: http://opensource.org/licenses/MIT",
+    "buildVersion": "1.2.0",
+    "compression": "maximum",
+    "win": {
+      "icon": "/wwwroot/assets/icons/logo.ico"
+    },
+    "directories": {
+      "output": "../../../bin/Desktop"
+    },
+    "extraResources": [
+      {
+        "from": "./bin",
+        "to": "bin",
+        "filter": [ "**/*" ]
+      }
+    ],
+    "files": [
+      {
+        "from": "./ElectronHostHook/node_modules",
+        "to": "ElectronHostHook/node_modules",
+        "filter": [ "**/*" ]
+      },
+      "**/*"
+    ]
+  }
+}

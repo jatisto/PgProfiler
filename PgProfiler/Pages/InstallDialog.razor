@@ -1,0 +1,57 @@
+﻿@using PgProfiler.Data
+@using MoiLib.Helpers
+@inject JsRuntimeForBlazorHelper JsRuntimeForBlazorHelper;
+
+<MudDialog>
+    <DialogContent>
+        <MudText>@ContentText</MudText>
+        <br/>
+        <hr/>
+        <MudText>Будут выполнены следующие команды:</MudText>
+        <hr/>
+        <br/>
+        <MudText>1. CREATE EXTENSION pg_stat_statements;</MudText>
+        <br/>
+        <MudText>2. ALTER SYSTEM SET SHARED_PRELOAD_LIBRARIES = 'pg_stat_statements';</MudText>
+        <br/>
+        <MudText>3. SET pg_stat_statements.track = 'all';</MudText>
+        <br/>
+        <MudText>4. SET log_statement = 'all';</MudText>
+        <br/>
+        <MudText>5. SET compute_query_id = 'on';</MudText>
+        <br/>
+        <MudChip Variant="Variant.Text" Color="Color.Success">Для более удобной работы с <b>pg_stat_statements</b>, будет создано представление <b>statments_v1</b></MudChip>
+        <br/>
+        <MudChip Variant="Variant.Text" Color="Color.Info">Если требуется более детальная настройка обратитесь к официальной инструкции. <a href="https://postgrespro.ru/docs/postgrespro/14/pgstatstatements" target="_blank" style="color: white">F.42. pg_stat_statements</a></MudChip>
+        <br/>
+        <MudChip Variant="Variant.Text" Color="Color.Warning">Так же обратите внимание, что будут внесены изменения в файл конфигурации. <b>(postgresql.conf)</b></MudChip>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Отмена</MudButton>
+        <MudButton Color="@Color" Variant="Variant.Filled" OnClick="Submit">@ButtonText</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter]
+    MudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter]
+    public string ContentText { get; set; } = null!;
+
+    [Parameter]
+    public string ButtonText { get; set; } = null!;
+
+    [Parameter]
+    public Color Color { get; set; }
+
+    void Submit ()
+    {
+        MudDialog.Close(DialogResult.Ok(true));
+        PgProfilerService.InstallPgStatStatements();
+        JsRuntimeForBlazorHelper.JsRuntimeInvokeVoidAsync("refreshPage", 500);
+    }
+
+    void Cancel () => MudDialog.Cancel();
+}

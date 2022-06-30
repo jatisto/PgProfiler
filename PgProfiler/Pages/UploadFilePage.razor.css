@@ -1,0 +1,27 @@
+.contentPars{
+    margin-top: 15px;
+}
+
+.addScrollFileUpload{
+    overflow-y:auto;
+    height: 800px;
+    max-width: 1700px;
+}
+
+.mud-button .mud-button__ripple {
+    color: #fff;
+    background: #000;
+    padding: 1.2rem 2rem;
+    cursor: pointer;
+    user-select: none;
+    border: none;
+    outline: none;
+    transition: background 9999999s;
+}
+
+.mud-button .mud-button__ripple:active {
+    background: red;
+    transition: background 0s;
+}
+
+

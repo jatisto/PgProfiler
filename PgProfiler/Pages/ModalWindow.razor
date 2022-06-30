@@ -1,0 +1,73 @@
+﻿@using MoiLib.ExecuteError
+@using MoiLib.Extension
+@using MoiLib.Helpers
+@inject JsRuntimeForBlazorHelper JsRuntimeForBlazorHelper;
+
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField T="string" Label="Наименование файла" @bind-Value="@NameFileValue"></MudTextField>
+        <MudTextField T="string" Label="Директория" @bind-Value="@DirectoryFileValue"></MudTextField>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Ok</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter]
+    MudDialogInstance? MudDialog { get; set; }
+
+    private string? NameFileValue { get; set; }
+    private string? DirectoryFileValue { get; set; }
+
+    /// <inheritdoc />
+    protected override Task OnInitializedAsync ()
+    {
+        NameFileValue = NameFile;
+        DirectoryFileValue = DirectoryFile;
+        return base.OnInitializedAsync();
+    }
+
+    /// <summary>
+    /// Данные для отображения в диалоге
+    /// </summary>
+    [Parameter]
+    public string? NameFile { get; set; }
+
+    [Parameter]
+    public string? DirectoryFile { get; set; }
+
+
+    async Task Submit ()
+    {
+        var result = new ExecuteResult();
+        try
+        {
+            if (result.IsOk)
+            {
+                MudDialog!.Close(DialogResult.Ok(true));
+                await JsRuntimeForBlazorHelper.JsRuntimeInvokeVoidAsync("refreshPage", 500);
+    // StateHasChanged();
+            }
+        } catch (Exception e)
+        {
+            MudDialog!.Cancel();
+            await JsRuntimeForBlazorHelper.JsRuntimeInvokeVoidAsync("messageBoxAndRefresh", new Dictionary<string, object>()
+            {
+                {"icon", "error"},
+                {"title", "Что, то пошло не так &#128542;"},
+                {"message", e.CreateExceptionMessageOrMessage(result.Message)}
+            });
+        }
+    }
+
+    async void Cancel ()
+    {
+        MudDialog!.Cancel();
+        await JsRuntimeForBlazorHelper.JsRuntimeInvokeVoidAsync("refreshPage", 500);
+    }
+
+}

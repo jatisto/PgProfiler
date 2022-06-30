@@ -1,0 +1,56 @@
+﻿@using Microsoft.AspNetCore.Components.Web
+@namespace PgProfiler.Pages
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <base href="~/"/>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/plugins/line-numbers/prism-line-numbers.min.css" integrity="sha512-3/cdM9qaJ5lBlzRKqwhMw+ZcNCVonz66BO6HgJudG/P1azm9wFrru31SsBa4T4Ew1AOH8HfDXSWS6emWwPl42A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/plugins/autolinker/prism-autolinker.min.css" integrity="sha512-4ZmAB2UXPu3Rgy5ZClpqnJ/zXXZBdulFXY1eWMLgIjp2HWgkHGIpr1b7kmCK+rdD5NYfivTp47UR+bQ4oTBllQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/plugins/show-invisibles/prism-show-invisibles.min.css" integrity="sha512-jjMMLLR9ye/Zx962P4owLwYeKZM0m1/IC5MtZq6bit3i1Rnbw2l/1g5HDVDxM+LkdkVP1QiuVTUBDu3OOcqN2w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/plugins/show-language/prism-show-language.min.css" integrity="sha512-09fmad4VA38AJxIRtkrW3DmKI2PsTsEpx3bfR8ZmkQunfQ9jORIieKVREv6fVLmqdnrFbPkCO5PKTnBIIvswBg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/plugins/wpd/prism-wpd.min.css" integrity="sha512-USWVwegdylECexlN+mQRdNE6MdSBH+L37FP1CN72Hw1oFk2Bt6TzGtQ5ZbtGUvv0EW/0XMwGj1V1Xioxcwq4RA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/plugins/ie8/prism-ie8.min.css" integrity="sha512-4ZmAB2UXPu3Rgy5ZClpqnJ/zXXZBdulFXY1eWMLgIjp2HWgkHGIpr1b7kmCK+rdD5NYfivTp47UR+bQ4oTBllQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet"/>
+    <link href="css/site.css" rel="stylesheet"/>
+    <link href="_content/Blazored.Modal/blazored-modal.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/themes/prism-tomorrow.min.css" integrity="sha512-kSwGoyIkfz4+hMo5jkJngSByil9jxJPKbweYec/UgS+S1EgE45qm4Gea7Ks2oxQ7qiYyyZRn66A9df2lMtjIsw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.1/css/all.css"
+              integrity="sha384-gfdkjb5BdAXd+lj+gudLWI+BXq4IuLW5IT+brZEZsLFm++aCMlF1V92rMkPaX4PP" crossorigin="anonymous">
+    <component type="typeof(HeadOutlet)" render-mode="ServerPrerendered"/>
+</head>
+<body>
+@RenderBody()
+
+<div id="blazor-error-ui">
+    <environment include="Staging,Production">
+        An error has occurred. This application may no longer respond until reloaded.
+    </environment>
+    <environment include="Development">
+        An unhandled exception has occurred. See browser dev tools for details.
+    </environment>
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/plugins/wpd/prism-wpd.min.js" integrity="sha512-3IkbYMsiwxgdSotkBvqTlBTstj0+zg/Ql0Vq/zNNtjSFzKWSiyvtll/BppVnSz6f/ek/f0i3F+dEUbC/2Ifdrw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/plugins/show-language/prism-show-language.min.js" integrity="sha512-WZeiH/5UJ3HZsxGBbWWIBluPrC/PIHbs/x1GtCP7lky8XbHXEzYfI9PJkL0d7/LdL7DvzHFScNkic8PaNhh+qg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/plugins/show-invisibles/prism-show-invisibles.min.js" integrity="sha512-AEU2CgCb7CV14tjYj6TYbu6CAL1ffStz4DXh5GT/UfcEF0XmCGocLKJdblZvyW7amjRXabGFpSSK0WRxc77wBA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/plugins/line-highlight/prism-line-highlight.min.js" integrity="sha512-MUsHA6aIEavjYGGEssYHDHg89kcl8lzc5fGblgCw0lWX2gYSq6phdSSrtMkekRwz4juQnlbI+7mCMm5BtWvLbg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/plugins/ie8/prism-ie8.min.js" integrity="sha512-AFADyUaNvlE9WfeaOqu7XrI9xePnX83sWr/MTTtMIlVI6m/HA/Q2hDMfKeySdsgjT1Hl6DuOJ9S02N3G/+rr8Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/plugins/highlight-keywords/prism-highlight-keywords.min.js" integrity="sha512-RKjvLuynm0s7uQr7sPpJ7yhwPQDyGVzlLe8+rsUX2eGYNzBz93JiP6D1ZRyK7VzdtpmCAp2gC9AqL9NVngAc3w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/plugins/file-highlight/prism-file-highlight.min.js" integrity="sha512-FWNmm0IyLo0UvBFHCvBmbxEN5M9hELGsEvI6C+77AloPqCUnwGfi7mTJWun6eov18cs8gB6Svh00iwUVqtNQjQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/plugins/autolinker/prism-autolinker.min.js" integrity="sha512-WhmQTpC//UpSoV1wz2GkMauQFAH4FN0Bma61ybaMQAve4ZhdDLKuu3z7lCBFzj2QlrfmGKNh63Twe/un/bIRSw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<script src="https://code.iconify.design/2/2.0.3/iconify.min.js"></script>
+<script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="_content/MudBlazor/MudBlazor.min.js"></script>
+<script src="_framework/blazor.server.js"></script>
+<script src="js/interop.js"></script>
+
+</body>
+</html>

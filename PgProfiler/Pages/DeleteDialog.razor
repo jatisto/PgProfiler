@@ -1,0 +1,33 @@
+﻿@using PgProfiler.Data
+@using MoiLib.Helpers
+@inject JsRuntimeForBlazorHelper JsRuntimeForBlazorHelper;
+
+<MudDialog>
+    <DialogContent>
+        <MudText>@ContentText</MudText>
+        <br/>
+        <MudChip Variant="Variant.Text" Color="Color.Error"><b>Внимание:</b> Данные в файле <b>(postgresql.conf)</b>, не будут затронуты.</MudChip>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Отмена</MudButton>
+        <MudButton Color="@Color" Variant="Variant.Filled" OnClick="Submit">@ButtonText</MudButton>
+    </DialogActions>
+</MudDialog>
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter] public string ContentText { get; set; } = null!;
+
+    [Parameter] public string ButtonText { get; set; } = null!;
+
+    [Parameter] public Color Color { get; set; }
+
+    void Submit ()
+    {
+        MudDialog.Close(DialogResult.Ok(true));
+        PgProfilerService.DeletePgStatStatements();
+        JsRuntimeForBlazorHelper.JsRuntimeInvokeVoidAsync("refreshPage", 500);
+    }
+
+    void Cancel() => MudDialog.Cancel();
+}

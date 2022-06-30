@@ -1,0 +1,221 @@
+﻿@page "/settings"
+@using PgProfiler.Data
+@using MoiLib.Helpers
+@using PgProfiler.Helpers
+@using MoiLib.Extension
+@inject PgProfilerService PgProfilerReader
+@inject JsRuntimeForBlazorHelper JsRuntimeForBlazorHelper;
+@inject IDialogService DialogService
+
+<MudPaper Style="background-color: #32333d" Width="100%" Height="100%">
+    <MudContainer Class="pa-15" Style="width: 100%; height: 100%; background-color: #32333d">
+        <h3>Настройки</h3>
+        <hr/>
+        <br/>
+        @* <MudContainer Class="container-fluid"> *@
+            <MudButton Style="margin: 10px 0 0 0; width: 355px" Variant="Variant.Filled" Disabled="@IsInstallPgStatStatements" StartIcon="@Icons.Material.Filled.InstallDesktop" IconColor="Color.Warning" Size="Size.Large"
+                       OnClick="@InstallPgStatStatements">
+                Установить [pg_stat_statements]
+            </MudButton>
+            <MudButton Style="margin: 10px 10px 0 0; width: 355px" Variant="Variant.Filled" Disabled="@IsDeletePgStatStatements" StartIcon="@Icons.Material.Filled.Delete" IconColor="Color.Error" Size="Size.Large"
+                       OnClick="@DeletePgStatStatements">
+                Удалить [pg_stat_statements]
+            </MudButton>
+        @* </MudContainer> *@
+        <hr/>
+        <br/>
+        <MudItem xs="12" sm="4">
+            <MudSelect T="string" Label="@SelectName" @bind-Value="@UidSelect" SelectedValuesChanged="ChangeSettingsById" Required="true">
+                @foreach (var r in SettingsVm!)
+                {
+                    var s = r!.ServerDb + " - " + r.PortDb + " - " + r.NameDb;
+                    <MudSelectItem Value="@r.Uid">@s</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <hr/>
+        <br/>
+        <MudTextField Variant="Variant.Filled" @bind-Value="Path" Clearable="true" Class="mr-5" Style="color: white;" Label="Путь к папке с логами"></MudTextField>
+        <MudTextField Variant="Variant.Filled" @bind-Value="CodeEditor" Clearable="true" Class="mr-5" Style="color: white;" Label="Редактор"></MudTextField>
+        <hr/>
+        <br/>
+        <MudTextField Variant="Variant.Filled" @bind-Value="ServerDb" Clearable="true" Class="mr-5" Style="color: white;" Label="Хост"></MudTextField>
+        <MudTextField Variant="Variant.Filled" @bind-Value="PortDb" Clearable="true" Class="mr-5" Style="color: white;" Label="Порт"></MudTextField>
+        <MudTextField Variant="Variant.Filled" @bind-Value="NameDb" Clearable="true" Class="mr-5" Style="color: white;" Label="Наименование базы данных"></MudTextField>
+        <MudTextField Variant="Variant.Filled" @bind-Value="Login" Clearable="true" Class="mr-5" Style="color: white;" Label="Логин"></MudTextField>
+        <MudTextField Variant="Variant.Filled" @bind-Value="Password" Clearable="true" Class="mr-5" Style="color: white;" Label="Пароль"></MudTextField>
+
+        <MudButton Style="margin: 20px 0 0 0;" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" IconColor="Color.Info" Size="Size.Large" 
+                   OnClick="@SetSettings">
+            Добавить
+        </MudButton>
+
+    </MudContainer>
+</MudPaper>
+
+
+@code {
+    private SettingPg? SettingsPg { get; set; }
+    private ConnectionModel? SettingPg { get; set; }
+    string? UidSelect { get; set; }
+    string? SelectName { get; set; }
+    bool IsInstallPgStatStatements { get; set; }
+    bool IsDeletePgStatStatements { get; set; } = true;
+
+    private List<ConnectionModel?>? SettingsVm { get; set; } = new();
+
+    private string? Path { get; set; }
+    
+    private string? CodeEditor { get; set; }
+    
+    private string? Uid { get; set; }
+
+    private string? ServerDb { get; set; }
+
+    private string? NameDb { get; set; }
+
+    private string? PortDb { get; set; }
+
+    private string? Login { get; set; }
+
+    private string? Password { get; set; }
+
+    protected override async Task OnInitializedAsync ()
+    {
+        try
+        {
+            var existsPg = PgProfilerReader.IsExistsView("pg_stat_statements");
+            if (existsPg.Result)
+            {
+                IsInstallPgStatStatements = true;
+                IsDeletePgStatStatements = false;
+            }
+    
+            await GetSittings();
+        } catch (Exception e)
+        {
+            await JsRuntimeForBlazorHelper.JsRuntimeInvokeVoidAsync("messageBox", new Dictionary<string, object>()
+            {
+                {"icon", "error"},
+                {"title", $"{nameof(OnInitializedAsync)}"},
+                {"message", $"Произошла ошибка. {e.CreateErrorMessage()}"}
+            });
+        }
+    }
+
+    private async Task GetSittings ()
+    {
+        var defaultSettings = DefaultModelHelpers.GetDefaultModel();
+        var settingsResult = await PgProfilerReader.GetSettings();
+        SettingsPg = settingsResult ?? defaultSettings;
+        
+        var list = SettingsPg!.Settings!.Select(x => x.SettingPg).ToList();
+        SettingsVm = list.Where(x => x!.NameDb == "postgres").ToList();
+        if (SettingsPg != null)
+        {
+            var result = SettingsPg;
+            var settings = result!.Settings;
+            if (settings != null)
+                SettingPg = settings.Select(x => x).FirstOrDefault(x => x.SettingPg!.IsActive == true)!.SettingPg;
+            Path = result.Path;
+            CodeEditor = result.CodeEditor;
+            Uid = SettingPg!.Uid;
+            ServerDb = SettingPg!.ServerDb;
+            NameDb = SettingPg!.NameDb;
+            PortDb = SettingPg!.PortDb;
+            Login = SettingPg!.Login;
+            Password = SettingPg!.Password;
+            SelectName = SettingPg.NameDb;
+        }
+    }
+    
+    private async Task ChangeSettingsById ()
+    {
+        await PgProfilerReader.SetActiveSettings(UidSelect);
+        var uId = UidSelect;
+        if (uId != null)
+        {
+            var resultByUid = GetSettingPgClassByIg(uId);
+            Uid = resultByUid!.Uid;
+            ServerDb = resultByUid!.ServerDb;
+            NameDb = resultByUid!.NameDb;
+            PortDb = resultByUid!.PortDb;
+            Login = resultByUid!.Login;
+            Password = resultByUid!.Password;    
+        }
+        SettingsPg = await PgProfilerReader.GetSettings();
+        await JsRuntimeForBlazorHelper.JsRuntimeInvokeVoidAsync("refreshPage", 500);
+    }
+
+    private ConnectionModel? GetSettingPgClassByIg (string uId)
+    {
+        var resultByUid = PgProfilerReader.GetСonnectionSettingsById(uId).Result;
+        return resultByUid;
+    }
+
+    private string GetSelectNameByUId (string uId)
+    {
+        var r = PgProfilerReader.GetСonnectionSettingsById(uId).Result;
+        return r!.ServerDb + " - " + r.PortDb + " - " + r.NameDb;;
+    }
+
+    private string? GetSettingsList (ConnectionModel connectionModel) { return $"{connectionModel.ServerDb}"; }
+
+    private async void SetSettings ()
+    {
+        var newGuid = Guid.NewGuid().ToString();
+        var executeResult = await PgProfilerReader.SaveSettings(new ConnectionModel()
+        {
+            Uid = newGuid,
+            ServerDb = ServerDb,
+            NameDb = NameDb,
+            PortDb = PortDb,
+            Login = Login,
+            Password = Password
+        }, Path, CodeEditor);
+        if (executeResult.IsOk)
+        {
+            await GetSittings();
+            await JsRuntimeForBlazorHelper.JsRuntimeInvokeVoidAsync("messageBox", new Dictionary<string, object>()
+            {
+                {"icon", "success"},
+                {"title", $"{nameof(SetSettings)}"},
+                {"message", $"{executeResult.Message}"}
+            });
+            await GetSittings();    
+        } else
+        {
+            await JsRuntimeForBlazorHelper.JsRuntimeInvokeVoidAsync("messageBox", new Dictionary<string, object>()
+            {
+                {"icon", "error"},
+                {"title", $"{nameof(SetSettings)}"},
+                {"message", $"Произошла ошибка. {executeResult.Message}"}
+            });
+        }
+    }
+
+    private void InstallPgStatStatements ()
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("ContentText", "Вы действительно хотите установить процедуру pg_stat_statements и все связанные представления?");
+        parameters.Add("ButtonText", "Установить [pg_stat_statements]");
+        parameters.Add("Color", Color.Error);
+
+        var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraExtraLarge };
+
+        DialogService.Show<InstallDialog>("Установить", parameters, options);
+    }
+
+    private void DeletePgStatStatements ()
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("ContentText", "Вы действительно хотите удалить процедуру pg_stat_statements?");
+        parameters.Add("ButtonText", "Удалить [pg_stat_statements]");
+        parameters.Add("Color", Color.Error);
+
+        var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraExtraLarge };
+
+        DialogService.Show<DeleteDialog>("Удалить", parameters, options);
+    }
+
+}

@@ -1,0 +1,125 @@
+﻿@using MoiLib.ExecuteError
+@using MoiLib.Extension
+@using MoiLib.Helpers
+@using PgProfiler.Dto
+@inject JsRuntimeForBlazorHelper JsRuntimeForBlazorHelper;
+
+
+<MudDialog>
+    <DialogContent>
+       <MudCard>
+           <MudCardHeader>
+               <CardHeaderAvatar>
+                   <MudAvatar Color="Color.Secondary">@QueryListValue.DatName</MudAvatar>
+               </CardHeaderAvatar>
+               <CardHeaderContent>
+                   <MudText Typo="Typo.body1">@QueryListValue.DatName</MudText>
+                   <MudText Typo="Typo.body2">DbId:&nbsp;@QueryListValue.DbId&nbsp;Celles:&nbsp;@QueryList.Calls&nbsp;Rows:&nbsp;@QueryList.Rows&nbsp;QueryStart:&nbsp;@QueryList.QueryStart</MudText>
+               </CardHeaderContent>
+               <CardHeaderActions>
+                   <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default" />
+               </CardHeaderActions>
+           </MudCardHeader>
+           <pre class="language-sql"><code>@QueryList!.Query</code></pre>
+           <MudCardContent>
+               <MudText Typo="Typo.body2">TimeSecExec:&nbsp;@QueryList.TimeSecExec&nbsp;TimeSecPlan:&nbsp;@QueryList.TimeSecPlan</MudText>
+           </MudCardContent>
+           <MudCardActions>
+               <MudIconButton Icon="@Icons.Material.Filled.FileOpen" aria-label="copy" @onclick="@(() => Clipboard(@QueryList.Query))"></MudIconButton>
+           </MudCardActions>
+       </MudCard>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Ok</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter]
+    MudDialogInstance? MudDialog { get; set; }
+
+    private QueryList? QueryListValue { get; set; }
+
+    /// <inheritdoc />
+    protected override Task OnInitializedAsync ()
+    {
+        QueryListValue = QueryList;
+        return base.OnInitializedAsync();
+    }
+
+    /// <summary>
+    /// Данные для отображения в диалоге
+    /// </summary>
+    [Parameter]
+    public QueryList? QueryList { get; set; }
+
+    async Task Submit ()
+    {
+        var result = new ExecuteResult();
+        try
+        {
+            if (result.IsOk)
+            {
+                MudDialog!.Close(DialogResult.Ok(true));
+                await JsRuntimeForBlazorHelper.JsRuntimeInvokeVoidAsync("refreshPage", 500);
+    // StateHasChanged();
+            }
+        } catch (Exception e)
+        {
+            MudDialog!.Cancel();
+            await JsRuntimeForBlazorHelper.JsRuntimeInvokeVoidAsync("messageBoxAndRefresh", new Dictionary<string, object>()
+            {
+                {"icon", "error"},
+                {"title", "Что, то пошло не так &#128542;"},
+                {"message", e.CreateExceptionMessageOrMessage(result.Message)}
+            });
+        }
+    }
+
+    async void Cancel ()
+    {
+        MudDialog!.Cancel();
+        await JsRuntimeForBlazorHelper.JsRuntimeInvokeVoidAsync("refreshPage", 500);
+    }
+
+    private async Task Clipboard (string? contextQuery)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(contextQuery))
+                return;
+
+            var result = await JsRuntimeForBlazorHelper.GetClipboard();
+           
+            if (contextQuery == result)
+            {
+                await JsRuntimeForBlazorHelper.JsRuntimeInvokeVoidAsync("messageBox", new Dictionary<string, object>()
+                {
+                    {"icon", "warning"},
+                    {"title", "Буффер обмена"},
+                    {"message", "Текст уже был успешно скопирован."}
+                });
+                return;
+            }
+
+            await JsRuntimeForBlazorHelper.Clipboard(contextQuery);
+            await JsRuntimeForBlazorHelper.JsRuntimeInvokeVoidAsync("messageBox", new Dictionary<string, object>()
+            {
+                {"icon", "success"},
+                {"title", "Буффер обмена"},
+                {"message", "Текст успешно скопирован в буффер обмена."}
+            });
+        } catch (Exception e)
+        {
+            await JsRuntimeForBlazorHelper.JsRuntimeInvokeVoidAsync("messageBox", new Dictionary<string, object>()
+            {
+                {"icon", "error"},
+                {"title", "Что, то пошло не так &#128542;"},
+                {"message", e.CreateExceptionMessageOrMessage()}
+            });
+        }
+    }
+    
+}

@@ -1,0 +1,394 @@
+@page "/"
+@using PgProfiler.Data
+@using PgProfiler.Dto
+@using MoiLib.Helpers
+@using MoiLib.Extension
+@using System.Globalization
+@using System.Timers
+@using PgProfiler.Db
+@using MoiLib.ExecuteError.ExecutionResultModelsByType
+@inject PgProfilerService PgProfilerReader
+@inject JsRuntimeForBlazorHelper JsRuntimeForBlazorHelper;
+@inject IDialogService DialogService
+
+<div class="container-fluid">
+    <MudChip Variant="Variant.Text" Icon="@SetIconProfiler" Style="margin-left: 10px" Color="@SetColorProfiler" @onclick="StartToggle">@StartProfileText</MudChip>
+    <MudChip Variant="Variant.Text" Style="@Hidden">@TimerValue</MudChip>
+   
+    <MudChip Variant="Variant.Text" Color="Color.Default">Колличество запросов:</MudChip><MudChip Variant="Variant.Text" Color="Color.Default">@CountQuery</MudChip>
+    <MudChip Variant="Variant.Text" Icon="@IconFilter" Style="margin-left: 10px" aria-label="starProfiler" Color="@SetColorFilter" @onclick="OnFilter">
+        @if (!IsFilterDb)
+        {
+            @FilterText
+        } else
+        {
+            <MudChip Variant="Variant.Text" Color="Color.Default">База данных:</MudChip> @DatnameValue
+        }
+    </MudChip>
+    
+    <MudItem xs="6" sm="12">
+        <MudSelect T="string" Label="@SelectName" @bind-Value="@UidSelect" SelectedValuesChanged="ChangeSettingsById" Required="true">
+            @foreach (var r in SettingsVm!)
+            {
+                <MudSelectItem Value="@r!.DatName">&nbsp;&nbsp;@r.DatName</MudSelectItem>
+            }
+        </MudSelect>
+    </MudItem>
+    
+    <MudTable Items="@_elements" Dense="@Dense" Hover="@Hover" Bordered="@Bordered" Striped="@Striped" Filter="new Func<StatementV1, bool>(FilterFunc1)" SortLabel="Sort By" @bind-SelectedItem="_selectedItem1">
+        <ToolBarContent>
+            <MudSpacer/>
+            <MudTextField @bind-Value="_searchString1" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            
+            <MudChip Variant="Variant.Text" Icon="@Icons.Material.Filled.Update" Color="Color.Info" @onclick="UpdateData">Обновить</MudChip>
+            <MudChip Variant="Variant.Text" Icon="@Icons.Material.Filled.Restore" Color="Color.Error" @onclick="LogReset">Отчистить</MudChip>
+         
+        </ToolBarContent>
+
+        <HeaderContent>
+            <MudTh>
+                <MudTableSortLabel InitialDirection="SortDirection.Descending" SortBy="new Func<StatementV1, object>(x => x.Index)">№</MudTableSortLabel>
+            </MudTh>
+            <MudTh>
+                <MudTableSortLabel InitialDirection="SortDirection.Descending" SortBy="new Func<StatementV1, object>(x => x.Query)">Запросы</MudTableSortLabel>
+            </MudTh>
+            <MudTh>
+                <MudTableSortLabel InitialDirection="SortDirection.Descending" SortBy="new Func<StatementV1, object>(x => x.TimeSecExec)">Time&nbsp;Sec.&nbsp;Exec</MudTableSortLabel>
+            </MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Index"  Style="width: 20px">@context.Index</MudTd>
+            <MudTd DataLabel="Query">
+                @if (!IsFilterDb)
+                {
+                    <MudChip Variant="Variant.Text" Color="Color.Info">База данных:&nbsp;@context.DatName</MudChip>
+                }
+                <MudChip Variant="Variant.Text" Color="Color.Default">
+                    &nbsp;Celles:&nbsp;@context.Calls&nbsp;Rows:&nbsp;@context.Rows&nbsp;QueryStart:&nbsp;@context.QueryStart&nbsp;&nbsp;
+                </MudChip>
+                <MudIconButton Icon="@Icons.Material.Filled.Info" aria-label="openQuery" @onclick="@(() => OnButtonClicked(@context))"></MudIconButton>
+                <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" aria-label="openQuery" @onclick="@(() => Clipboard(@context.Query))"></MudIconButton>
+                <pre class="language-sql"><code>@context.Query</code></pre>
+            </MudTd>
+            <MudTd DataLabel="Index"  Style="width: 20px">@context.TimeSecExec&nbsp;сек.</MudTd>
+        </RowTemplate>
+        <PagerContent>
+            <MudTablePager/>
+        </PagerContent>
+    </MudTable>
+</div>
+
+@code {
+
+    string? UidSelect { get; set; }
+    string? SelectName { get; set; } = $"\t{DatnameValue}";
+    private IEnumerable<PgDatabase?>? SettingsVm { get; set; } = new List<PgDatabase?>();
+    
+    private void ChangeSettingsById ()
+    {
+        DatnameValue = UidSelect;
+        SelectName = "";
+        UpdateData();
+    }
+   
+    private async void OnButtonClicked (StatementV1 queryList)
+    {
+        await DialogService.ShowMessageBox(
+            $"{queryList.DatName}", 
+            (MarkupString) $"IdDb: ({queryList.DbId}), IdQuery: ({queryList.QueryId}), UserId: ({queryList.UserId})");
+        StateHasChanged();
+    }
+
+    void StartToggle ()
+    {
+        IsStartProfiler = !IsStartProfiler;
+        var iconStart = Icons.Material.Filled.Start;
+        var iconStop = Icons.Material.Filled.Stop;
+        StartProfileText = !IsStartProfiler ? "Запустить профайлер" : "Остановить профайлер";
+        SetIconProfiler = !IsStartProfiler ? iconStart : iconStop;
+        SetColorProfiler = !IsStartProfiler ? Color.Success : Color.Error;
+        _isHidden = true;
+        StartProfilerPg();
+    }
+    
+    bool _isHidden;
+    private string? Hidden => !_isHidden ? "display: none;" : null;
+
+    private string? StartProfileText { get; set; } = "Запустить профайлер";    
+    private string? SetIconProfiler { get; set; } = Icons.Material.Filled.Start;
+    private Color SetColorProfiler { get; set; } = Color.Success;
+    private Color SetColorFilter { get; set; } = Color.Primary;
+    private const bool Dense = false;
+    private const bool Hover = true;
+    private const bool Striped = true;
+    private const bool Bordered = true;
+    private string _searchString1 = "";
+    private StatementV1 _selectedItem1 = new();
+    private uint DbIdValue { get; set; }
+    private static string? DatnameValue { get; set; } = "postgres";
+    private string? FilterText { get; set; } = "Отключён";
+    private Timer? Timer { get; set; }
+    private int Period { get; set; } = 1000;
+    private string? TimerValue { get; set; } = DateTime.Now.ToLocalTime().ToString("HH:mm:ss", CultureInfo.InvariantCulture);
+    private bool IsStartProfiler { get; set; }
+    private bool IsFilterDb { get; set; } = true;
+    private int? CountQuery { get; set; }
+    private string? IconFilter { get; set; } = Icons.Material.Filled.FilterList;
+    private List<StatementV1> _elements = new();
+
+    /// <inheritdoc />   
+
+    protected override Task OnInitializedAsync ()
+    {
+        var existsPg = PgProfilerReader.IsExistsView("pg_stat_statements");
+        var existsV1 = new BoolExecuteResult();
+        if (existsPg.Result)
+        {
+            existsV1 = PgProfilerReader.IsExistsView("statement_v1");    
+        }
+        
+			
+        if (!existsPg.Result || !existsV1.Result)
+            JsRuntimeForBlazorHelper.JsRuntimeInvokeVoidAsync("messageBox", new Dictionary<string, object>()
+            {
+                {"icon", "error"},
+                {"title", "Проверка наличия представлений"},
+                {"message", $"{(existsPg.Result ? "" : existsPg.Message + " ")}{(existsV1.Result ? "" : existsV1.Message)}"}
+            }).AsTask();
+        else
+        {
+            GetSittings();
+            FillingInTheData();
+        }
+        
+        return base.OnInitializedAsync();
+    }
+
+    private void StartProfilerPg ()
+    {
+        if (IsStartProfiler)
+        {
+            Timer = new Timer(Period);
+            Timer.Elapsed += OnTimedEvent;
+            Timer.AutoReset = true;
+            Timer.Enabled = true;
+        } else
+        {
+            StopTimer();
+        }
+    }
+    
+    private void OnTimedEvent(object? source, ElapsedEventArgs e) { Start(); }
+
+    private void Start ()
+    {
+        FillingInTheData();
+        TimerValue = DateTime.Now.ToLocalTime().ToString("HH:mm:ss", CultureInfo.InvariantCulture);
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void StopTimer ()
+    {
+        Timer?.Stop();
+        Timer?.Dispose();
+        _isHidden = false;
+    }
+    
+    private void FillingInTheData ()
+    {
+        try
+        {
+            var filterQuery = new BuilderQuery()
+            {
+                Columns = GetColumns(),
+                TableName = Constants.StatementV1,
+                OrderBy = new []{"query_start"},
+                Limit = default,
+                IsDesc = true,
+                ComplexFilter = new List<ComplexFilterItems>()
+                {
+                    new(){
+                        ColumnName = "datname",
+                        ComparisonOperator = ComparisonOperators.Equal,
+                        Value = DatnameValue ?? ContextPg.GetSettingDbname()
+                    }
+                }
+            };
+            
+            if (!IsFilterDb)
+            {
+                filterQuery.ComplexFilter = new List<ComplexFilterItems>();
+            }
+            
+            var executeResult = PgProfilerReader?.GetDataFromPgStatStatements(filterQuery);
+            if (!executeResult!.IsOk) return;
+            if (executeResult.Result!.Count == 0)
+            {
+                DatnameValue = "Данные отсутствуют";
+                SelectName = "";
+                _elements = new List<StatementV1>();
+                return;
+            }
+            var getLogsResult =  executeResult!.Result;
+            CountQuery = getLogsResult?.Count;
+            if (getLogsResult == null) return;
+            {
+                var logsResult = getLogsResult.ToArray();
+                {
+                    var statementV1S = logsResult.ToArray();
+                    DbIdValue = statementV1S.Select(x => x.DbId).FirstOrDefault();
+                    DatnameValue = statementV1S.Select(x => x.DatName).FirstOrDefault();                
+                }
+                _elements = logsResult.ToList();
+            }
+        } catch (Exception e)
+        {
+            JsRuntimeForBlazorHelper.JsRuntimeInvokeVoidAsync("messageBox", new Dictionary<string, object>()
+            {
+                {"icon", "error"},
+                {"title", "Что, то пошло не так &#128542;"},
+                {"message", e.CreateExceptionMessageOrMessage()}
+            }).AsTask();
+        }
+    }
+
+    private static Dictionary<string, string> GetColumns ()
+    {
+        return new Dictionary<string, string>()
+        {
+            {"datname", "datname"},
+            {"dbid", "dbid"},
+            {"userid", "userid"},
+            {"queryid", "queryid"},
+            {"query", "query"},
+            {"query_start", "query_start"},
+            {"calls", "calls"},
+            {"time_sec_exec", "time_sec_exec"},
+            {"time_sec_plan", "time_sec_plan"},
+            {"plans", "plans"},
+            {"rows", "rows"},
+            {"shered_balk_hit_read_written", "shered_balk_hit_read_written"}
+        };
+    }
+
+    private void GetSittings ()
+    {
+        var filterQuery = new BuilderQuery()
+        {
+            Columns = new Dictionary<string, string>()
+            {
+                {"oid", "oid"},
+                {"datname", "datname"}
+            },
+            TableName = Constants.PgDatabase
+        };
+        
+        var executeResult = PgProfilerReader?.GetDataFromPgStatStatementsFunk((rows) =>
+        {
+            var str = new List<PgDatabase>();
+            for (var i   = 0; i < rows.Count; i++)
+            {
+                var row = rows[i];
+                var cells = row.ItemArray;
+                str.Add(new PgDatabase()
+                {
+                    Oid = (uint) cells[0]!,
+                    DatName = (string) cells[1]!,
+                });
+            }
+            return new ResultExecuteResult<List<PgDatabase>>(){Result = str};
+        }, filterQuery).AsTask();
+       
+        SettingsVm = executeResult?.Result.Result.Result;
+    }
+    
+    private bool FilterFunc1 (StatementV1 element) => FilterFunc(element, _searchString1);
+
+    private static bool FilterFunc (StatementV1 element, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString)) return true;
+        if (element.DatName != null && element.DatName.Contains(searchString, StringComparison.OrdinalIgnoreCase)) 
+            return true;    
+        if (element.QueryStart != default && $"{element.QueryStart}".Contains(searchString, StringComparison.OrdinalIgnoreCase)) 
+            return true;
+        return element.Query != null && (element.Query.Contains(searchString, StringComparison.OrdinalIgnoreCase) || $"{element.Query} {element.DatName}".Contains(searchString));
+    }
+
+    private void LogReset ()
+    {
+        var result = PgProfilerService.PgStatStatementsReset(DbIdValue);
+        if (result.IsOk)
+        {
+            JsRuntimeForBlazorHelper.JsRuntimeInvokeVoidAsync("messageBox", new Dictionary<string, object>()
+            {
+                {"icon", "success"},
+                {"title", "pg_stat_statements_reset();"},
+                {"message", $"Сброс логов для db:[{DatnameValue}] прошёл успешно."}
+            });
+            
+            FillingInTheData();
+            StateHasChanged();
+        } else
+        {
+            JsRuntimeForBlazorHelper.JsRuntimeInvokeVoidAsync("messageBox", new Dictionary<string, object>()
+            {
+                {"icon", "error"},
+                {"title", "pg_stat_statements_reset();"},
+                {"message", $"Сброс логов для db:[{DatnameValue}] не удался. {result.Message}"}
+            });
+        }
+    }
+
+    private async Task Clipboard (string? contextQuery)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(contextQuery))
+                return;
+
+            var result = await JsRuntimeForBlazorHelper.GetClipboard();
+           
+            if (contextQuery == result)
+            {
+                await JsRuntimeForBlazorHelper.JsRuntimeInvokeVoidAsync("messageBox", new Dictionary<string, object>()
+                {
+                    {"icon", "warning"},
+                    {"title", "Буффер обмена"},
+                    {"message", "Текст уже был успешно скопирован."}
+                });
+                return;
+            }
+
+            await JsRuntimeForBlazorHelper.Clipboard(contextQuery);
+            await JsRuntimeForBlazorHelper.JsRuntimeInvokeVoidAsync("messageBox", new Dictionary<string, object>()
+            {
+                {"icon", "success"},
+                {"title", "Буффер обмена"},
+                {"message", "Текст успешно скопирован в буффер обмена."}
+            });
+        } catch (Exception e)
+        {
+            await JsRuntimeForBlazorHelper.JsRuntimeInvokeVoidAsync("messageBox", new Dictionary<string, object>()
+            {
+                {"icon", "error"},
+                {"title", "Что, то пошло не так &#128542;"},
+                {"message", e.CreateExceptionMessageOrMessage()}
+            });
+        }
+    }
+    
+    private void UpdateData ()
+    {
+        FillingInTheData();
+        StateHasChanged();
+    }
+
+    private void OnFilter ()
+    {
+        IsFilterDb = !IsFilterDb;
+        IconFilter = !IsFilterDb ? @Icons.Material.Filled.FilterListOff : @Icons.Material.Filled.FilterList;
+        SetColorFilter = !IsFilterDb ? Color.Default : Color.Primary;
+        DatnameValue = UidSelect;
+        UpdateData();
+    }
+}

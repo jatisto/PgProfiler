@@ -1,0 +1,79 @@
+﻿@page "/UploadFilePage"
+@using System.Diagnostics
+@using System.IO
+@using System.Text
+@using PgProfiler.Data
+
+<MudPaper Style="background-color: #32333d" Width="100%" Height="100%">
+    <MudContainer Class="pa-15" Style="width: 100%; height: 100%; background-color: #32333d">
+        <MudText Typo="Typo.h5">Загрузить файл</MudText>
+        <br/>
+        <br/>
+        <InputFile id="fileInput" OnChange="UploadFiles" hidden multiple/>
+
+        <MudButton HtmlTag="label"
+                   Variant="Variant.Filled"
+                   Color="Color.Default"
+                   StartIcon="@Icons.Filled.UploadFile"
+                   for="fileInput">
+            Загрузить файл
+        </MudButton>
+       
+        <MudButton OnClick="Clear" Color="Color.Error">Отчистить @ButtonState</MudButton>
+        <br/>
+        <div class="addScrollFileUpload">
+            <pre class="@Hidden language-sql"><code>@_fileContent</code></pre>
+        </div>
+    </MudContainer>
+</MudPaper>
+
+@code
+{
+    string? _fileContent;
+    bool _isHidden;
+    private string? Hidden => !_isHidden ? "hidden" : null;
+
+    private async Task UploadFiles (InputFileChangeEventArgs eventArgs)
+    {
+        foreach (var item in eventArgs.GetMultipleFiles())
+        {
+            try
+            {
+                _isHidden = true;
+
+                var sw = Stopwatch.StartNew();
+                var stream = item.OpenReadStream();
+                sw.Stop();
+
+                if (stream.Length > 50000000)
+                {
+                    _fileContent = "";
+                    _fileContent += $"Name:\t{item.Name}\r\n";
+                    _fileContent += $"Type:\t{item.ContentType}\r\n";
+                    _fileContent += $"LastModified:\t{item.LastModified}\r\n";
+                    _fileContent += $"Size:\t{item.Size}\r\n";
+                    _fileContent += $"Time:\t{sw.Elapsed}\r\n";
+                    _fileContent += $"Speed:\t{(stream.Length / sw.Elapsed.TotalSeconds):N0}  b/s\r\n";
+                } else
+                {
+                    using var reader = new StreamReader(stream);
+                    _fileContent = await reader.ReadToEndAsync();
+                }
+            } catch (Exception e)
+            {
+                _fileContent = $"Error:\r\n{e.Message}\r\n{e.StackTrace}";
+            } finally
+            {
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
+    private const string ButtonState = "";
+
+    private void Clear ()
+    {
+        _fileContent = null;
+        _isHidden = false;
+    }
+}
