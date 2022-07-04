@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using MoiLib.ExecuteError;
 using MoiLib.ExecuteError.ExecutionResultModelsByType;
+using MoiLib.Helpers;
 using PgProfiler.Db;
 using PgProfiler.Dto;
 using PgProfiler.Interface;
@@ -126,29 +127,7 @@ namespace PgProfiler.Data
 		public static void ProcessStart (string? directoryName, string? fileName)
 		{
 			var codeEditor = ContextPg.GetCodeEditor();
-			var path = Path.Combine(directoryName + "\\" + fileName);
-			if (string.IsNullOrEmpty(codeEditor))
-			{
-				new Process
-				{
-					StartInfo = new ProcessStartInfo(path)
-					{
-						UseShellExecute = true
-					}
-				}.Start();
-			}else
-			{
-				new Process
-				{
-					StartInfo = new ProcessStartInfo
-					{
-						UseShellExecute = true,
-						FileName = codeEditor,
-						WorkingDirectory = directoryName,
-						Arguments = $"{fileName}"
-					}
-				}.Start();
-			}
+			WorkToConsoleHelper.OpenInEditor(directoryName, fileName, codeEditor);
 		}
 	}
 }

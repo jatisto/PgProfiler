@@ -1,6 +1,5 @@
 using ElectronNET.API;
 using ElectronNET.API.Entities;
-using MatBlazor;
 using PgProfiler.Data;
 using Blazored.Modal;
 using MoiLib.Helpers;
@@ -16,7 +15,6 @@ var builder = WebApplication.CreateBuilder(args);
 	builder.Services.AddScoped<ISettings, ContextSettings>();
 	builder.Services.AddScoped<JsRuntimeForBlazorHelper>();
 	builder.Services.AddScoped<IWorkingWithSettings, WorkingWithSettings>();
-	builder.Services.AddMatBlazor();
 	builder.WebHost.UseElectron(args);
 	builder.Services.AddBlazoredModal();
 	builder.Services.AddMudBlazorScrollManager();

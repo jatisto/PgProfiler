@@ -250,10 +250,4 @@ namespace PgProfiler.Db ;
 				}
 			});
 		}
-		
-		/// <summary>
-		/// Обёртка над throw new Exception
-		/// </summary>
-		/// <param name="message">Сообщение об ошибки</param>
-		private static void ThrowException (string message) { throw new Exception(message); }
 	}

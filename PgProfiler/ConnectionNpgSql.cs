@@ -128,10 +128,4 @@ namespace PgProfiler ;
 				ThrowException(ex.CreateErrorMessage());
 			}
 		}
-
-		/// <summary>
-		/// Обёртка над throw new Exception
-		/// </summary>
-		/// <param name="message">Сообщение об ошибки</param>
-		private  void ThrowException (string message) { throw new Exception(message); }
 	}

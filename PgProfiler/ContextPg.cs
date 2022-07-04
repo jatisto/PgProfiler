@@ -48,7 +48,7 @@ namespace PgProfiler ;
 		/// </summary>
 		public static string? GetPath ()
 		{
-			var setting = SettingPg;
+			var setting = ContextSettings.GetSettingsStatic();
 			return setting?.Path;
 		}
 
@@ -57,13 +57,7 @@ namespace PgProfiler ;
 		/// </summary>
 		public static string? GetCodeEditor()
 		{
-			var setting = SettingPg;
+			var setting = ContextSettings.GetSettingsStatic();
 			return setting?.CodeEditor;
 		}
-
-		/// <summary>
-		/// Обёртка над Exception
-		/// </summary>
-		/// <param name="message">Сообщение</param>
-		private static void ThrowException (string message) { throw new Exception(message); }
 	}
