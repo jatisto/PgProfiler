@@ -35,4 +35,7 @@
     <Folder Include="Enum" />
     <Folder Include="obj\Debug\net6.0" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PgProfile.Service\PgProfile.Service.csproj" />
+  </ItemGroup>
 </Project>

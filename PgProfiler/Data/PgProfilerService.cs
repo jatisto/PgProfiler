@@ -1,8 +1,9 @@
 ﻿using System.Data;
-using System.Diagnostics;
 using MoiLib.ExecuteError;
 using MoiLib.ExecuteError.ExecutionResultModelsByType;
 using MoiLib.Helpers;
+using PgProfile.Service.FactoryMethod;
+using PgProfile.Service.Model;
 using PgProfiler.Db;
 using PgProfiler.Dto;
 using PgProfiler.Interface;
@@ -16,7 +17,7 @@ namespace PgProfiler.Data
 	{
 		private readonly IWorkingWithSettings _workingWithSettings;
 		private static Query? _query;
-
+		private DateTime? SelectedDate { get; set; } = DateTime.Now;
 		public PgProfilerService (ISettings settings)
 		{
 			_workingWithSettings = new WorkingWithSettings();
@@ -33,6 +34,10 @@ namespace PgProfiler.Data
 			var dictionary = _workingWithSettings.GetFileInDirectory(pathToFolder, data);
 			return Task.FromResult(dictionary);
 		}
+
+		public Task<List<PgLogFileModel>> GetDataFromLogs(string? pathToFolder, string? fileName) =>
+			Task.FromResult(
+				new LogProcessor<PgLogFileModel>().Parsing(pathToFolder, SelectedDate, fileName));
 
 		/// <summary>
 		/// Получить настройки
