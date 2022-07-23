@@ -1,0 +1,79 @@
+﻿@page "/ParseLogFile"
+@using PgProfiler.Data
+@using MoiLib.Helpers
+@using PgProfile.Service.Model
+@using System.Globalization
+@inject PgProfilerService PgProfilerReader
+@inject JsRuntimeForBlazorHelper JsRuntimeForBlazorHelper;
+@inject IDialogService DialogService
+
+<MudTable Items="@_elements" Dense="@Dense" Hover="@Hover" Bordered="@Bordered" Striped="@Striped" Filter="new Func<PgLogFileModel,bool>(FilterFunc1)" @bind-SelectedItem="_selectedItem1">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Логи&nbsp;за&nbsp;@DateTime.Now.ToString("dd-MM-yyyy")</MudText>
+        <MudSpacer />
+        <MudTextField @bind-Value="_searchString1" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTableSortLabel Style="margin-left: 15px;" InitialDirection="SortDirection.Descending" SortBy="new Func<PgLogFileModel, object>(x => x.DateTimeLog)">Дата</MudTableSortLabel>
+        <MudTh>Содержимое</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="date">@context.DateTimeLog</MudTd>
+        <MudTd DataLabel="content">
+             <MudChip Variant="Variant.Text" Color="Color.Default">
+                 Zone:&nbsp;<b>@context.Zone</b>&nbsp;Code:&nbsp;<b>@context.CodeLog</b>&nbsp;
+                     </MudChip>
+            <MudChip Variant="Variant.Text" Color="Color.Default">
+                @if (@context.TypeOperator == "ОШИБКА")
+                {
+                    <b style="color:red">@context.TypeOperator</b>
+                } else
+                {
+                    <b style="color: var(--mud-palette-tertiary-moi)">@context.TypeOperator</b>   
+                }
+            </MudChip>
+            <pre class="language-sql"><code>@context.Content</code></pre>
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+
+@code {
+    private const bool Dense = true;
+    private const bool Hover = true;
+    private const bool Striped = true;
+    private const bool Bordered = true;
+    private string _searchString1 = "";
+    private PgLogFileModel _selectedItem1 = null!;
+    private IEnumerable<PgLogFileModel> _elements = new List<PgLogFileModel>();
+
+    protected override Task OnInitializedAsync ()
+    {
+        var pathDefault = PgProfilerReader.GetSettings().AsTask().Result;
+        if (pathDefault.Path == null) return base.OnInitializedAsync();
+        var files = PgProfilerReader.GetFileInDirectory(pathDefault.Path, DateTime.Now).Result;
+        var logFileInfo = files.FirstOrDefault();
+            
+        var logs = PgProfilerReader.GetDataFromLogs(logFileInfo!.DirectoryName, logFileInfo.Name).Result;
+        _elements = logs;
+        return base.OnInitializedAsync();
+    }
+    
+    private bool FilterFunc1(PgLogFileModel element) => FilterFunc(element, _searchString1);
+
+    private static bool FilterFunc(PgLogFileModel element, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (element.DateTimeLog.ToString(CultureInfo.InvariantCulture).Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (element.CodeLog!.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (element.TypeOperator!.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return element.Content!.Contains(searchString, StringComparison.OrdinalIgnoreCase) || $"{element.Content} {element.CodeLog}".Contains(searchString);
+    }
+}
