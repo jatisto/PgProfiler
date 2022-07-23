@@ -11,7 +11,7 @@
     "appId": "com.PgProfiler.app",
     "productName": "PgProfiler",
     "copyright": "Copyright © 2022 Eugene Abdyushev Contacts: <eugeneabdushev@gmail.com>. License: http://opensource.org/licenses/MIT",
-    "buildVersion": "1.2.1",
+    "buildVersion": "1.2.2",
     "compression": "maximum",
     "win": {
       "icon": "/wwwroot/assets/icons/logo.ico"
